@@ -18,7 +18,7 @@ class TestConfig:
         default_config = Config()
 
         # Test API settings
-        assert default_config.ANTHROPIC_MODEL == "claude-sonnet-4-20250514"
+        assert default_config.ANTHROPIC_MODEL == "claude-sonnet-4-6"
         assert default_config.EMBEDDING_MODEL == "all-MiniLM-L6-v2"
 
         # Test document processing settings
@@ -29,15 +29,12 @@ class TestConfig:
         # Test database paths
         assert default_config.CHROMA_PATH == "./chroma_db"
 
-    def test_broken_max_results_configuration(self):
-        """Test the critical MAX_RESULTS=0 configuration issue"""
+    def test_max_results_configuration(self):
+        """Test that MAX_RESULTS is properly configured to a positive value"""
         default_config = Config()
 
-        # This test documents the current broken state
-        assert default_config.MAX_RESULTS == 0  # This is the bug!
-
-        # This value should be > 0 for the system to work properly
-        # When MAX_RESULTS=0, the vector search returns no results
+        assert default_config.MAX_RESULTS == 5
+        assert default_config.MAX_RESULTS > 0
 
     def test_proper_max_results_configuration(self):
         """Test what the MAX_RESULTS configuration should be"""
@@ -53,27 +50,18 @@ class TestConfig:
         assert proper_config.MAX_RESULTS >= 1  # Must be at least 1
 
     def test_config_with_environment_variables(self):
-        """Test configuration loading from environment variables"""
-        with patch.dict(
-            os.environ,
-            {
-                "ANTHROPIC_API_KEY": "test-env-key",
-                "ANTHROPIC_MODEL": "claude-test-model",
-            },
-        ):
-            # Create new config instance to pick up env vars
-            test_config = Config()
+        """Test configuration can be overridden via constructor arguments"""
+        # Config evaluates os.getenv() at class-definition time, so we pass
+        # values explicitly rather than relying on env-var patching after import.
+        test_config = Config(ANTHROPIC_API_KEY="test-env-key")
 
-            assert test_config.ANTHROPIC_API_KEY == "test-env-key"
-            assert test_config.ANTHROPIC_MODEL == "claude-test-model"
+        assert test_config.ANTHROPIC_API_KEY == "test-env-key"
 
     def test_config_missing_api_key(self):
-        """Test configuration when API key is missing"""
-        with patch.dict(os.environ, {}, clear=True):
-            test_config = Config()
+        """Test configuration when API key is explicitly empty"""
+        test_config = Config(ANTHROPIC_API_KEY="")
 
-            # Should default to empty string when env var not set
-            assert test_config.ANTHROPIC_API_KEY == ""
+        assert test_config.ANTHROPIC_API_KEY == ""
 
     def test_config_chunk_settings_valid(self):
         """Test that chunk processing settings are valid"""
@@ -120,18 +108,17 @@ class TestConfig:
         assert config.MAX_RESULTS == 5
 
     def test_config_impact_on_vector_search(self):
-        """Test how MAX_RESULTS=0 impacts vector search behavior"""
-        broken_config = Config()
-        proper_config = Config()
-        proper_config.MAX_RESULTS = 5
+        """Test how MAX_RESULTS value impacts vector search behavior"""
+        default_config = Config()
+        custom_config = Config()
+        custom_config.MAX_RESULTS = 10
 
-        # Demonstrate the difference
-        assert broken_config.MAX_RESULTS == 0  # Broken - will return no results
-        assert proper_config.MAX_RESULTS == 5  # Fixed - will return results
+        assert default_config.MAX_RESULTS == 5
+        assert custom_config.MAX_RESULTS == 10
 
-        # This test shows why the system fails:
-        # When max_results is used as n_results in ChromaDB query,
-        # n_results=0 means "return 0 results" regardless of matches
+        # n_results=0 would cause ChromaDB to return no results;
+        # the default of 5 ensures searches return content.
+        assert default_config.MAX_RESULTS > 0
 
     def test_config_values_are_correct_types(self):
         """Test that all config values have correct types"""
@@ -168,8 +155,8 @@ class TestConfig:
 
             return errors
 
-        # Test current broken config
-        broken_config = Config()
+        # Test explicitly broken config (MAX_RESULTS=0)
+        broken_config = Config(MAX_RESULTS=0)
         errors = validate_config(broken_config)
 
         # Should have validation errors
@@ -241,7 +228,7 @@ class TestConfig:
 
         # Changes to one shouldn't affect the other
         config1.MAX_RESULTS = 10
-        assert config2.MAX_RESULTS == 0  # Still the default broken value
+        assert config2.MAX_RESULTS == 5  # Default value unaffected
 
     @pytest.mark.parametrize(
         "max_results,expected_behavior",

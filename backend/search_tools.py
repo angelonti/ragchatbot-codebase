@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 
 from vector_store import SearchResults, VectorStore
 
@@ -57,6 +57,9 @@ class CourseSearchTool(Tool):
         course_name: Optional[str] = None,
         lesson_number: Optional[int] = None,
     ) -> str:
+        self.last_sources = []
+        self.last_source_links = []
+
         """
         Execute the search tool with given parameters.
 
@@ -88,13 +91,17 @@ class CourseSearchTool(Tool):
             return f"No relevant content found{filter_info}."
 
         # Format and return results
-        return self._format_results(results)
+        formatted_text, source_links = self._format_results(results)
+        self.last_source_links = source_links
+        return formatted_text
 
-    def _format_results(self, results: SearchResults) -> str:
+    def _format_results(
+        self, results: SearchResults
+    ) -> Tuple[str, List[Optional[str]]]:
         """Format search results with course and lesson context"""
         formatted = []
-        sources = []  # Track sources for the UI
-        source_links = []  # Track lesson links for the UI
+        sources = []
+        source_links = []
 
         for doc, meta in zip(results.documents, results.metadata):
             course_title = meta.get("course_title", "unknown")
@@ -120,11 +127,8 @@ class CourseSearchTool(Tool):
 
             formatted.append(f"{header}\n{doc}")
 
-        # Store sources and links for retrieval
         self.last_sources = sources
-        self.last_source_links = source_links
-
-        return "\n\n".join(formatted)
+        return "\n\n".join(formatted), source_links
 
 
 class CourseOutlineTool(Tool):
