@@ -1,4 +1,66 @@
-# Frontend Changes - Dark/Light Theme Toggle
+# Frontend Changes
+
+---
+
+## Code Quality Tooling
+
+### Overview
+Added frontend code quality tooling with Prettier for formatting and ESLint for linting. Provides consistent code style enforcement for all HTML, JS, and CSS files.
+
+### New Files
+
+#### `frontend/package.json`
+- Defines `prettier`, `eslint`, and `@eslint/js` as dev dependencies
+- npm scripts: `format` (write), `format:check` (read-only), `lint` (ESLint)
+- Install: `cd frontend && npm install`
+
+#### `frontend/.prettierrc`
+- 4-space indent, single quotes, trailing commas (ES5), semicolons
+- `printWidth: 80`, `arrowParens: "always"`
+
+#### `frontend/eslint.config.js`
+- ESLint 9 flat config using `@eslint/js` recommended rules
+- Browser globals + `marked` declared as read-only
+- Rules: `eqeqeq: error`, `no-unused-vars: warn`, `no-console: warn`
+
+#### `frontend/.prettierignore`
+- Excludes `node_modules/`
+
+#### `scripts/frontend-format.sh`
+- Runs `prettier --write` on all frontend HTML/JS/CSS files
+- Usage: `./scripts/frontend-format.sh`
+
+#### `scripts/frontend-lint.sh`
+- Runs `prettier --check` + `eslint` without modifying files
+- Exit code 0 = all checks pass; non-zero = issues found
+- Usage: `./scripts/frontend-lint.sh`
+
+### Modified Files
+
+#### `frontend/script.js`
+Applied Prettier-consistent formatting throughout:
+- Trailing commas added to all multi-line object literals and function call arguments
+- `.map()` chains reformatted with method chaining on separate lines
+- Redundant inline comments removed (self-explanatory code)
+- Consistent arrow function parentheses (`(e) =>` not `e =>`)
+
+### Setup
+
+```bash
+cd frontend
+npm install
+```
+
+Then use the scripts from the repo root:
+
+```bash
+./scripts/frontend-format.sh   # auto-fix formatting
+./scripts/frontend-lint.sh     # check only (CI-safe)
+```
+
+---
+
+## Dark/Light Theme Toggle
 
 ## Overview
 Added a toggle button that allows users to switch between dark and light themes for the Course Materials Assistant application.
