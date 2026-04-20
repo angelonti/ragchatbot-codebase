@@ -105,6 +105,31 @@ header h1 {
     margin-top: 0.5rem;
 }
 
+.powered-by {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+.powered-by .claude-icon {
+    color: #d97757;
+    flex-shrink: 0;
+}
+
+.powered-by a {
+    color: #d97757;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.powered-by a:hover {
+    text-decoration: underline;
+}
+
 /* Theme Toggle Button */
 .theme-toggle {
     position: relative;
